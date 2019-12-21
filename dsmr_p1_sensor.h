@@ -1,16 +1,5 @@
-
-
 #include "esphome.h"
 #include "dsmr.h"
-
-// * Baud rate for both hardware and software serial
-#define BAUD_RATE 115200
-
-// * Max telegram length
-#define P1_MAXLINELENGTH 100
-
-// * P1 Meter RX pin
-#define P1_SERIAL_RX D3
 
 // * Parsed Data
 using MyData = ParsedData<
@@ -69,10 +58,11 @@ using MyData = ParsedData<
 >;
 
 uint8_t req_pin = 5;
+
 unsigned long last;
 
 //  P1Reader reader(&Serial, 0);
-P1Reader reader(&Serial,2);
+P1Reader reader(&Serial,req_pin);
 
 struct Printer {
   template<typename Item>
@@ -90,17 +80,12 @@ struct Printer {
   }
 };
 
-
-
-
-
-
 class DsmrP1CustomSensor : public PollingComponent, public UARTDevice {
  public:
   DsmrP1CustomSensor(UARTComponent *parent) : UARTDevice(parent) {}
    // * Set to store received telegram
   char telegram[P1_MAXLINELENGTH];
-  
+
   // * Set to store the data values read
   long CONSUMPTION_LOW_TARIF;
   long CONSUMPTION_HIGH_TARIF;
