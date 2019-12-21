@@ -1,4 +1,4 @@
-#include "esphome.h"
+include "esphome.h"
 #include "dsmr.h"
 
 // * Parsed Data
@@ -58,11 +58,9 @@ using MyData = ParsedData<
 >;
 
 uint8_t req_pin = 5;
-
 unsigned long last;
 
-//  P1Reader reader(&Serial, 0);
-P1Reader reader(&Serial,req_pin);
+P1Reader reader(&Serial,2);
 
 struct Printer {
   template<typename Item>
@@ -78,6 +76,7 @@ struct Printer {
       Serial.println();
     }
   }
+};
 
 class DsmrP1CustomSensor : public PollingComponent, public UARTDevice {
  public:
@@ -95,17 +94,20 @@ class DsmrP1CustomSensor : public PollingComponent, public UARTDevice {
   Sensor *short_power_drops_sensor = new Sensor();
   Sensor *short_power_peaks_sensor = new Sensor();
 
+
   void setup() override {
-    pinMode(D5, OUTPUT);
-    digitalWrite(D5,LOW);
-    reader.enable(true);
-    last = millis();
+        MyData data;
+        pinMode(D5, OUTPUT);
+        digitalWrite(D5,LOW);
+        reader.enable(true);
+        last = millis();
   }
 
   void update() override {
     // Allow the reader to check the serial buffer regularly
   reader.loop();
   digitalWrite(D5,HIGH);
+  // Every minute, fire off a one-off reading
   unsigned long now = millis();
   if (now - last > 5000) {
     reader.enable(true);
@@ -126,7 +128,7 @@ class DsmrP1CustomSensor : public PollingComponent, public UARTDevice {
       instant_power_current_sensor->publish_state(data.current_l1);
       instant_power_usage_sensor->publish_state(data.power_delivered_l1);
       gas_meter_m3_sensor->publish_state(data.gas_delivered);
-      actual_tarif_sensor->publish_state(data.electricity_tariff);
+//      actual_tarif_sensor->publish_state(data.electricity_tariff);
       short_power_outages_sensor->publish_state(data.electricity_failures);
       long_power_outages_sensor->publish_state(data.electricity_long_failures);
       short_power_drops_sensor->publish_state(data.electricity_sags_l1);
@@ -136,5 +138,5 @@ class DsmrP1CustomSensor : public PollingComponent, public UARTDevice {
       Serial.println(err);
     }
   }
+}
 };
-
