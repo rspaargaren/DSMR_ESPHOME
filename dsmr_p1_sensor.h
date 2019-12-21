@@ -59,6 +59,7 @@ using MyData = ParsedData<
 
 uint8_t req_pin = 5;
 unsigned long last;
+bool readmessage = false;
 
 P1Reader reader(&Serial,2);
 
@@ -101,6 +102,7 @@ class DsmrP1CustomSensor : public PollingComponent, public UARTDevice {
         digitalWrite(D5,LOW);
         reader.enable(true);
         last = millis();
+	readmessage = false;
   }
 
   void update() override {
@@ -109,9 +111,10 @@ class DsmrP1CustomSensor : public PollingComponent, public UARTDevice {
   digitalWrite(D5,HIGH);
   // Every minute, fire off a one-off reading
   unsigned long now = millis();
-  if (now - last > 5000) {
+  if (now - last > 15000) {
     reader.enable(true);
     last = now;
+    readmessage = false;
   }
 
   if (available()) {
@@ -120,7 +123,8 @@ class DsmrP1CustomSensor : public PollingComponent, public UARTDevice {
     //ESP_LOGD("DmsrCustom","READING....");
     if (reader.parse(&data, &err)) {
       // Parse succesful, print result
-      data.applyEach(Printer());
+      //data.applyEach(Printer());
+      if (!readmessage){
       ESP_LOGD("DmsrCustom","READING READY");
       consumption_low_tarif_sensor->publish_state(data.energy_delivered_tariff1);
       consumption_high_tarif_sensor->publish_state(data.energy_delivered_tariff2);
@@ -133,6 +137,9 @@ class DsmrP1CustomSensor : public PollingComponent, public UARTDevice {
       long_power_outages_sensor->publish_state(data.electricity_long_failures);
       short_power_drops_sensor->publish_state(data.electricity_sags_l1);
       short_power_peaks_sensor->publish_state(data.electricity_swells_l1);
+      reader.enable(false);
+      readmessage = true;
+      };
     } else {
       // Parser error, print error
       Serial.println(err);
