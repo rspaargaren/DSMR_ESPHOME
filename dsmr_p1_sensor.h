@@ -97,13 +97,10 @@ class DsmrP1CustomSensor : public PollingComponent, public UARTDevice {
   Sensor *short_power_peaks_sensor = new Sensor();
 
   void setup() override {
-	MyData data;
-
-	pinMode(D5, OUTPUT);
-	digitalWrite(D5,LOW);
-        
-	reader.enable(true);
-	last = millis();
+    pinMode(D5, OUTPUT);
+    digitalWrite(D5,LOW);
+    reader.enable(true);
+    last = millis();
   }
 
   void update() override {
