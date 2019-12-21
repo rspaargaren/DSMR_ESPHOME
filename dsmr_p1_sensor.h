@@ -78,7 +78,6 @@ struct Printer {
       Serial.println();
     }
   }
-};
 
 class DsmrP1CustomSensor : public PollingComponent, public UARTDevice {
  public:
