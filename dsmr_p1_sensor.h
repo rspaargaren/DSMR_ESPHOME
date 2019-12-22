@@ -101,10 +101,10 @@ class DsmrP1CustomSensor : public PollingComponent, public UARTDevice {
   Sensor *s_current_l1 = new Sensor();
   Sensor *s_gas_delivered = new Sensor();
   Sensor *actual_tarif_sensor = new Sensor();
-  Sensor *short_power_outages_sensor = new Sensor();
-  Sensor *long_power_outages_sensor = new Sensor();
-  Sensor *short_power_drops_sensor = new Sensor();
-  Sensor *short_power_peaks_sensor = new Sensor();
+  Sensor *s_electricity_failures = new Sensor();
+  Sensor *s_electricity_long_failures = new Sensor();
+  Sensor *s_electricity_sags_l1 = new Sensor();
+  Sensor *s_electricity_swells_l1 = new Sensor();
 
   void PublishSensors(MyData data){
     //if(data.identification_present) ts_identification->publish_state(data.identification);
@@ -123,10 +123,10 @@ class DsmrP1CustomSensor : public PollingComponent, public UARTDevice {
     if(data.current_l1_present) s_current_l1->publish_state(data.current_l1);
     if(data.gas_delivered_present) s_gas_delivered->publish_state(data.gas_delivered);
     delay(100); //Delay is added so home assistant is not overflooded with sensor data and disconnects.
-    short_power_outages_sensor->publish_state(data.electricity_failures);
-    long_power_outages_sensor->publish_state(data.electricity_long_failures);
-    short_power_drops_sensor->publish_state(data.electricity_sags_l1);
-    short_power_peaks_sensor->publish_state(data.electricity_swells_l1);
+    if(data.electricity_failures_present) s_electricity_failures->publish_state(data.electricity_failures);
+    if(data.electricity_long_failures_present) s_electricity_long_failures->publish_state(data.electricity_long_failures);
+    if(data.electricity_sags_l1_present) s_electricity_sags_l1->publish_state(data.electricity_sags_l1);
+    if(data.electricity_swells_l1_present) s_electricity_swells_l1->publish_state(data.electricity_swells_l1);
   };
 
   void setup() override {
