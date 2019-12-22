@@ -71,10 +71,11 @@ struct Printer {
       Serial.print(Item::name);
       Serial.print(F(": "));
       Serial.print(i.val());
-//      ESP_LOGD("DmsrCustom","%u",i.val());
+      //ESP_LOGD("DmsrCustom","%s",String(i.val()));
       Serial.print(Item::unit());
       ESP_LOGD("DmsrCustom","%s",Item::unit());
       Serial.println();
+      delay(50);
     }
   }
 };
@@ -83,9 +84,19 @@ class DsmrP1CustomSensor : public PollingComponent, public UARTDevice {
  public:
   DsmrP1CustomSensor(UARTComponent *parent) : UARTDevice(parent) {}
 
-  Sensor *consumption_low_tarif_sensor = new Sensor();
-  Sensor *consumption_high_tarif_sensor = new Sensor();
-  Sensor *actual_consumption_sensor = new Sensor();
+//  Sensor *ts_identification = new Sensor(); Not available yet as I do not know how to send a combination of textsensors and sensors
+//  Sensor *ts_p1_version = new Sensor();
+//  Sensor *ts_timestamp = new Sensor();
+//  Sensor *ts_equipment_id = new Sensor();
+  Sensor *s_energy_delivered_tariff1 = new Sensor();
+  Sensor *s_energy_delivered_tariff2 = new Sensor();
+  Sensor *s_energy_returned_tariff1 = new Sensor();
+  Sensor *s_energy_returned_tariff2 = new Sensor();
+//  Sensor *ts_electricity_tariff = new Sensor():
+  Sensor *s_power_delivered = new Sensor();
+  Sensor *s_power_returned = new Sensor();
+
+//  Sensor *actual_consumption_sensor = new Sensor();
   Sensor *instant_power_current_sensor = new Sensor();
   Sensor *instant_power_usage_sensor = new Sensor();
   Sensor *gas_meter_m3_sensor = new Sensor();
@@ -96,9 +107,20 @@ class DsmrP1CustomSensor : public PollingComponent, public UARTDevice {
   Sensor *short_power_peaks_sensor = new Sensor();
 
   void PublishSensors(MyData data){
-    consumption_low_tarif_sensor->publish_state(data.energy_delivered_tariff1);
-    consumption_high_tarif_sensor->publish_state(data.energy_delivered_tariff2);
-    actual_consumption_sensor->publish_state(data.power_delivered);
+    //if(data.identification_present) ts_identification->publish_state(data.identification);
+    //if(data.p1_version_present) ts_p1_version->publish_state(data.p1_version);
+    //if(data.timestamp_present) ts_timestamp->publish_state(data.timestamp);
+    //if(data.equipment_id_present) ts_equipment_id->publish_state(data.equipment_id);
+    if(data.energy_delivered_tariff1_present) s_energy_delivered_tariff1->publish_state(data.energy_delivered_tariff1);
+    if(data.energy_delivered_tariff2_present) s_energy_delivered_tariff2->publish_state(data.energy_delivered_tariff2);
+    if(data.energy_returned_tariff1_present) s_energy_returned_tariff1->publish_state(data.energy_returned_tariff1);
+    if(data.energy_returned_tariff2_present) s_energy_returned_tariff2->publish_state(data.energy_returned_tariff2);
+//    if(data.electricity_tariff_present) ts_electricity_tariff->publish_state(data.electricity_tariff);
+    if(data.power_delivered_present) s_power_delivered->publish_state(data.power_delivered);
+    if(data.power_returned_present) s_power_returned->publish_state(data.power_returned);
+    //consumption_low_tarif_sensor->publish_state(data.energy_delivered_tariff1);
+    //consumption_high_tarif_sensor->publish_state(data.energy_delivered_tariff2);
+    //actual_consumption_sensor->publish_state(data.power_delivered);
     instant_power_current_sensor->publish_state(data.current_l1);
     instant_power_usage_sensor->publish_state(data.power_delivered_l1);
     gas_meter_m3_sensor->publish_state(data.gas_delivered);
@@ -135,13 +157,14 @@ class DsmrP1CustomSensor : public PollingComponent, public UARTDevice {
       String err;
       //ESP_LOGD("DmsrCustom","READING....");
       if (reader.parse(&data, &err)) {
-        // Parse succesful, print result
-        data.applyEach(Printer());
         if (!readmessage){
           ESP_LOGD("DmsrCustom","READING READY");
           PublishSensors(data);
           reader.enable(false);
           readmessage = true;
+          // Parse succesful, print result
+          data.applyEach(Printer());
+
         };
       } else {
         // Parser error, print error
