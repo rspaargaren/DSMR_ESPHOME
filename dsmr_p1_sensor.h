@@ -61,7 +61,7 @@ uint8_t req_pin = 5;
 unsigned long last;
 bool readmessage = false;
 
-P1Reader reader(&Serial,2);
+P1Reader reader(&Serial,req_pin);
 
 struct Printer {
   template<typename Item>
@@ -95,55 +95,58 @@ class DsmrP1CustomSensor : public PollingComponent, public UARTDevice {
   Sensor *short_power_drops_sensor = new Sensor();
   Sensor *short_power_peaks_sensor = new Sensor();
 
+  void PublishSensors(MyData data){
+    consumption_low_tarif_sensor->publish_state(data.energy_delivered_tariff1);
+    consumption_high_tarif_sensor->publish_state(data.energy_delivered_tariff2);
+    actual_consumption_sensor->publish_state(data.power_delivered);
+    instant_power_current_sensor->publish_state(data.current_l1);
+    instant_power_usage_sensor->publish_state(data.power_delivered_l1);
+    gas_meter_m3_sensor->publish_state(data.gas_delivered);
+    delay(100); //Delay is added so home assistant is not overflooded with sensor data and disconnects.
+//  actual_tarif_sensor->publish_state(data.electricity_tariff);
+    short_power_outages_sensor->publish_state(data.electricity_failures);
+    long_power_outages_sensor->publish_state(data.electricity_long_failures);
+    short_power_drops_sensor->publish_state(data.electricity_sags_l1);
+    short_power_peaks_sensor->publish_state(data.electricity_swells_l1);
+  };
 
   void setup() override {
-        MyData data;
-        pinMode(D5, OUTPUT);
-        digitalWrite(D5,LOW);
-        reader.enable(true);
-        last = millis();
-	readmessage = false;
+    MyData data;
+    pinMode(D5, OUTPUT);
+    digitalWrite(D5,LOW);
+    reader.enable(true);
+    last = millis();
+    readmessage = false;
   }
 
   void update() override {
     // Allow the reader to check the serial buffer regularly
-  reader.loop();
-  digitalWrite(D5,HIGH);
-  // Every minute, fire off a one-off reading
-  unsigned long now = millis();
-  if (now - last > 15000) {
-    reader.enable(true);
-    last = now;
-    readmessage = false;
-  }
-
-  if (available()) {
-    MyData data;
-    String err;
-    //ESP_LOGD("DmsrCustom","READING....");
-    if (reader.parse(&data, &err)) {
-      // Parse succesful, print result
-      //data.applyEach(Printer());
-      if (!readmessage){
-      ESP_LOGD("DmsrCustom","READING READY");
-      consumption_low_tarif_sensor->publish_state(data.energy_delivered_tariff1);
-      consumption_high_tarif_sensor->publish_state(data.energy_delivered_tariff2);
-      actual_consumption_sensor->publish_state(data.power_delivered);
-      instant_power_current_sensor->publish_state(data.current_l1);
-      instant_power_usage_sensor->publish_state(data.power_delivered_l1);
-      gas_meter_m3_sensor->publish_state(data.gas_delivered);
-//      actual_tarif_sensor->publish_state(data.electricity_tariff);
-      short_power_outages_sensor->publish_state(data.electricity_failures);
-      long_power_outages_sensor->publish_state(data.electricity_long_failures);
-      short_power_drops_sensor->publish_state(data.electricity_sags_l1);
-      short_power_peaks_sensor->publish_state(data.electricity_swells_l1);
-      reader.enable(false);
-      readmessage = true;
-      };
-    } else {
-      // Parser error, print error
-      Serial.println(err);
+    reader.loop();
+    digitalWrite(D5,HIGH);
+    // Every minute, fire off a one-off reading
+    unsigned long now = millis();
+    if (now - last > 15000) {
+      reader.enable(true);
+      last = now;
+      readmessage = false;
+    }
+    if (available()) {
+      MyData data;
+      String err;
+      //ESP_LOGD("DmsrCustom","READING....");
+      if (reader.parse(&data, &err)) {
+        // Parse succesful, print result
+        data.applyEach(Printer());
+        if (!readmessage){
+          ESP_LOGD("DmsrCustom","READING READY");
+          PublishSensors(data);
+          reader.enable(false);
+          readmessage = true;
+        };
+      } else {
+        // Parser error, print error
+        Serial.println(err);
+      }
     }
   }
-}
 };
