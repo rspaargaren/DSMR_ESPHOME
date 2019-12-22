@@ -95,11 +95,11 @@ class DsmrP1CustomSensor : public PollingComponent, public UARTDevice {
 //  Sensor *ts_electricity_tariff = new Sensor():
   Sensor *s_power_delivered = new Sensor();
   Sensor *s_power_returned = new Sensor();
-
-//  Sensor *actual_consumption_sensor = new Sensor();
-  Sensor *instant_power_current_sensor = new Sensor();
-  Sensor *instant_power_usage_sensor = new Sensor();
-  Sensor *gas_meter_m3_sensor = new Sensor();
+//  Sensor *instant_power_current_sensor = new Sensor();
+//  Sensor *instant_power_usage_sensor = new Sensor();
+  Sensor *s_voltage_l1 = new Sensor();
+  Sensor *s_current_l1 = new Sensor();
+  Sensor *s_gas_delivered = new Sensor();
   Sensor *actual_tarif_sensor = new Sensor();
   Sensor *short_power_outages_sensor = new Sensor();
   Sensor *long_power_outages_sensor = new Sensor();
@@ -115,17 +115,14 @@ class DsmrP1CustomSensor : public PollingComponent, public UARTDevice {
     if(data.energy_delivered_tariff2_present) s_energy_delivered_tariff2->publish_state(data.energy_delivered_tariff2);
     if(data.energy_returned_tariff1_present) s_energy_returned_tariff1->publish_state(data.energy_returned_tariff1);
     if(data.energy_returned_tariff2_present) s_energy_returned_tariff2->publish_state(data.energy_returned_tariff2);
-//    if(data.electricity_tariff_present) ts_electricity_tariff->publish_state(data.electricity_tariff);
+    //if(data.electricity_tariff_present) ts_electricity_tariff->publish_state(data.electricity_tariff);
     if(data.power_delivered_present) s_power_delivered->publish_state(data.power_delivered);
     if(data.power_returned_present) s_power_returned->publish_state(data.power_returned);
-    //consumption_low_tarif_sensor->publish_state(data.energy_delivered_tariff1);
-    //consumption_high_tarif_sensor->publish_state(data.energy_delivered_tariff2);
-    //actual_consumption_sensor->publish_state(data.power_delivered);
-    instant_power_current_sensor->publish_state(data.current_l1);
-    instant_power_usage_sensor->publish_state(data.power_delivered_l1);
-    gas_meter_m3_sensor->publish_state(data.gas_delivered);
     delay(100); //Delay is added so home assistant is not overflooded with sensor data and disconnects.
-//  actual_tarif_sensor->publish_state(data.electricity_tariff);
+    if(data.voltage_l1_present) s_voltage_l1->publish_state(data.voltage_l1);
+    if(data.current_l1_present) s_current_l1->publish_state(data.current_l1);
+    if(data.gas_delivered_present) s_gas_delivered->publish_state(data.gas_delivered);
+    delay(100); //Delay is added so home assistant is not overflooded with sensor data and disconnects.
     short_power_outages_sensor->publish_state(data.electricity_failures);
     long_power_outages_sensor->publish_state(data.electricity_long_failures);
     short_power_drops_sensor->publish_state(data.electricity_sags_l1);
@@ -163,8 +160,7 @@ class DsmrP1CustomSensor : public PollingComponent, public UARTDevice {
           reader.enable(false);
           readmessage = true;
           // Parse succesful, print result
-          data.applyEach(Printer());
-
+          //data.applyEach(Printer());
         };
       } else {
         // Parser error, print error
